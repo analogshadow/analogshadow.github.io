@@ -1,0 +1,949 @@
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+  <title>Tech Deviancy - C Pointer Qualifiers</title>
+ </head>
+ <body bgcolor="#000000" link=#06004d vlink=#06004d alink=#06004d text=#000000>
+
+  <table align=center>
+   <tr>
+    <td>
+     <a href="./index.html"><img src="./td.gif" alt="TECH DEVIANCY"></a>
+    </td>
+   </tr>
+  </table>
+
+  <table valign=top align=center cellpadding=20>
+   <tr>
+    <td valign=top align=center>
+     <table cellpadding=10 cellspacing=0 valign=top  border=1>
+      <tr>
+       <td valign=top background="./bg3.jpg" width=880>
+        <table cellpadding=10 width=100%  border=1> 
+         <tr>
+          <td valign=top align=left>
+<!-- End Header -->
+
+
+  <p align=right><i>last updated</i>, <b>May 17, 2011</b></p>
+
+
+  <h1 align=center>C Pointer Qualifiers</h1>
+  <hr align=center width=80%>
+  <p align=center>My cheat sheet in progress</p>
+  <hr align=center width=80%>
+  <br>
+
+  <h2>Quick Background</h2>
+  <p>Lately, I'm having to change and get with the decade.
+     Here are some quick points I'm trying to pay more attention to.
+  </p>
+
+  <br>
+  <h2 align=center><a id=constantness>Pointers to Constants vs Constant Pointers</a></h2>
+  <p>Well, C++ might have at least one good idea, since that is where this came from. :)
+     Newer version of GCC and visual stdio (2005+) support these features.
+     C89 added <font color=red>const</font> along with <font color=red>volatile</font>.
+  </p>
+
+  <h3>Returning Pointers to Constants</h3>
+  <p>Consider the following example.
+     Here, <b>function</b>() returns a pointer to a <i>constant</i> structure.
+     That means that from a <i>compilation</i> and <i>
+     <a href="http://en.wikipedia.org/wiki/Static_code_analysis">static code analysis</a></i>
+     point of view, the contents of the structure (or simply value if it was a native type), should
+     only be read from.
+     The qualifier is also great for documentation, because it tells us something we shouldn't do.
+     The syntax is to put the <font color=red>const</font> keyword <i>before</i> the type of pointer.
+  </p>
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32</font></pre>
+</td>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;stdlib.h&gt;
+
+<font color=blue>struct a</font>
+{
+ <font color=red>int</font> <i>x</i>;
+};
+
+<font color=red>const</font> <font color=blue>struct a *</font> <b>function</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct a *</font>ptr;
+
+ <font color=red>if</font>((ptr <font color=red>=</font> (<font color=blue>struct a *</font>) <b>malloc</b>(<font color=red>sizeof</font>(<font color=blue>struct a</font>))) == <font color=brown>NULL</font>)
+ {
+  <b>exit</b>(1);
+ }
+
+ ptr<font color=red>-&gt;</font>x <font color=red>=</font> 0;
+ <font color=red>return</font> ptr;
+}
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>int</font> y;
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr;
+
+ ptr <font color=red>=</font> <b>function</b>();
+
+ y <font color=red>=</font> ptr<font color=red>-&gt;</font>x;
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr></table>
+
+  <p>So what happens if try to write to that location anyway?
+     We get slapped with a gcc error.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10</font></pre>
+</td>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr;
+
+ ptr <font color=red>=</font> <b>function</b>();
+
+ ptr<font color=red>-&gt;</font>x <font color=red>=</font> 1;
+
+ <font color=red>return</font> 0;
+}</pre>
+</td></tr>
+</table>
+
+<table cellpadding=5>
+<tr><td bgcolor=darkseagreen>
+<pre>
+<font color=black>error: assignment of read-only location ‘*ptr’</font></pre>
+</td></tr></table>
+
+  <p>What if just save the value to a non-constant local version?
+     We get slapped with a gcc warning.
+  </p>
+<table><tr>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10</font></pre>
+</td>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct a *</font>ptr;
+
+ ptr <font color=red>=</font> <b>function</b>();
+
+ ptr<font color=red>-&gt;</font>x <font color=red>=</font> 1;
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr>
+</table>
+
+<table cellpadding=5>
+<tr><td bgcolor=darkseagreen>
+<pre>
+<font color=black>warning: assignment discards qualifiers from pointer target type</font></pre>
+</td></tr></table>
+
+  <p>What if "know what we are doing", and just type cast?
+     Well that works.
+     Just remember that if you really are going to write to that value that you really do <i>know</i>
+     that the documentation (the prototype) told you not to, and that if you don't want to write to 
+     value, you are not letting the compiler help you with its own error checking and possibly optimizations.
+     Such an action is somewhat like the mirror image of the inside of <b>function</b>() itself.
+     That is, there the constant qualification only comes in the picture after we are "ready", durring
+     the implicit type cast from non-constant to constant by the return  statement.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10</font></pre>
+</td>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct a *</font>ptr;
+
+ ptr <font color=red>=</font> (<font color=blue>struct a *</font>) <b>function</b>();
+
+ ptr<font color=red>-&gt;</font>x <font color=red>=</font> 1;
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr></table>
+  <p>This illustrates our first rule about constants, <b>the constant property only last for a single
+     <i>typed</i> variable at compile time</b>. 
+     That is, other than a possible optimization in generated code, <b>nothing about the runtime is
+     effected</b>.
+     Once a variable is copied / assigned to another, the properties (and "constantness") of 
+     those two variables are independent. 
+     Additionally, a type cast can temporarily adjust those properties. 
+  </p>
+
+  <h3>Parameters of Pointers to Constant Structures</h3> 
+
+  <p>Besides again being an opertunity for the compiler to check for errors and optimize the body
+     of a function with such a parameter, it <i>documents</i> to the API user that certain things
+     will never happen. 
+     In this example we can safely say that a memory leak is not created, because the function
+     prototype <i>promisses</i> not to overwrite our reference to it. 
+     (Of course it could by intentional action).
+  </p>
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=blue>struct b</font>
+{
+ <font color=red>const</font> <font color=blue>struct a *</font><i>nested_ptr</i>;
+};
+
+<font color=red>void</font> <b>do_something</b>(<font color=red>const</font> <font color=blue>struct b *</font><i>ptr</i>)
+{
+ <font color=red>const</font> <font color=blue>struct a *</font>x <font color=red>=</font> <i>ptr</i><font color=red>-&gt;</font>nested_ptr;
+}
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct b</font> b_obj;
+
+ b_obj<font color=red>.</font>nested_ptr <font color=red>=</font> <b>function</b>();
+
+ <font color=royalblue>/* I "know" that the above allocation wont be "lost" by an overwrite durring this function call */</font>
+ <b>do_something</b>(<font color=red>&amp;</font>b_obj);
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr></table>
+
+  <br>
+  <h3>Constant Pointers</h3>
+  <p>A constant pointer on the other hand is a "regular" C constant, that is <i>what it points to</i>
+     can't be changed. 
+     So if you can't change the value, then how does it get set in the first place?
+     More accurately, constants can't be changed after <i>initialization</i>.
+     So the only way to give them a value is at declaration time, which includes when they are function parameters.
+     Note also that declarations like the one below are useless as far as I can tell since <i>x</i> can never be set to anything.
+     GCC doesn't complain about that in particular though (aside from the -Wall option producing the normal related warnings).
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const int</font> </font>x;
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr></table>
+  <p>This is actually an important point. 
+     So much so, I'll call it our next rule about constants.
+     <b>Syntactically valid, yet logically useless variable declarations are allowed</b>.
+     When you are trying to fix errors with some of the more complicated qualifiers,
+     you have to just know, that the compiler may not warn you that a variable declaration will
+     never be useful, and likely the cause.
+  </p>
+
+  <p>Anyway, to mark as a pointer as constant the <font color=red>const</font> keyword goes after the '*'. 
+     Such a pointer as parameter in a function prototype, doesn't really do anything for the API user
+     as far as documentation.
+     It does however help the compiler's error checking and optimazation efforts inside the function body.
+     For a simple example, the above <b>do_something</b>() prototype can be rewritten as follows bellow. 
+     Nothing has changed at all, except if the function implimentation were to overwrite <i>ptr</i>
+     the compiler would generate an error.
+     The compiler would also generate an error if say <i>ptr</i>-&gt;<i>nested_ptr</i> were to be
+     written to since the parameter was still a pointer to a constant structure.
+     Now the paramater is a <i>constant pointer to a constant structure</i>.
+     As already stated, the "initialization" of the function's local variable <i>ptr</i> is, of course,
+     done at the time the function is called by the value passed to it, and can not be reset.
+  </p>
+<table><tr><td bgcolor=wheat>
+<pre>
+<font color=red>void</font> <b>do_something</b>(<font color=red>const</font> <font color=blue>struct b *</font> <font color=red>const</font> <i>ptr</i>);
+</pre>
+</td></tr></table>
+
+  <h3>More on Initializing Constants</h3>
+  <p>A constant structure can be initialized (and "frozen" by its "constantness") like this.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const</font> <font color=blue>struct a</font> obj <font color=red>=</font> [ 5 ];
+
+ <font color=red>return</font> obj<font color=red>.</font>x;
+}
+</pre>
+</td></tr></table>
+
+  <p>A pointer to constant structure can be initialized in a couple of ways like this.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const</font> <font color=blue>struct a</font> obj <font color=red>=</font> [ 5 ];
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr_a <font color=red>=</font> <font color=red>&amp;</font>obj;
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr_b <font color=red>=</font> <b>function</b>();
+
+ <font color=red>return</font> ptr_a<font color=red>-&gt;</font>x;
+}
+</pre>
+</td></tr></table>
+
+  <p>A constant pointer to constant structure can be initialized in a couple of ways  like this.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8</font></pre>
+</td>
+
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const</font> <font color=blue>struct a</font> obj <font color=red>=</font> [ 5 ];
+ <font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> ptr_a <font color=red>=</font> <font color=red>&amp;</font>obj;
+ <font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> ptr_b <font color=red>=</font> <b>function</b>();
+
+ <font color=red>return</font> ptr_a<font color=red>-&gt;</font>x;
+}
+</pre>
+</td></tr></table>
+
+  <h3>Returning Constant Pointers</h3>
+  <p>Here's one I still don't fully understand.
+     See if it makes sense to you. 
+     I see that this prototype would specify a function (it works to) that would return
+     a constant pointer.
+     My question is, what does that "protect" you from?
+     That returned value is never writeable, as it, at most, is just copied to a local variable.
+  </p>
+<table><tr><td bgcolor=wheat>
+<pre>
+<font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> <b>function</b>(<font color=red>void</font>);
+</pre>
+</td></tr></table>
+
+  <h3>Filling in Constant Pointers, and Pointers to Pointers</h3>
+  <p>A common reason for functions to take pointers to pointers as parameters is so that a pointer
+     value may be "filled in" or updated. 
+     Let's start with a quick illustration before things nuts.
+  </p>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>void</font> <b>fill_in</b>(<font color=red>const</font> <font color=blue>struct a **</font><i>location</i>)
+{
+ <font color=red>*</font><i>location</i> <font color=red>=</font> <b>function</b>();
+}
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr;
+
+ <b>fill_in</b>(<font color=red>&amp;</font>ptr);
+
+ <font color=red>return</font> 0;
+}
+</pre>
+</td></tr></table>
+  <p>So here, the only thing different from Mom and Pop, meat and potatos C, is that
+     we are still using a constant structure.
+     To reiterate, that means again that niether <b>main</b>(), nor <b>fill_in</b>() may
+     write to the <i>contents of</i> the "a" structure in use.
+  </p>
+  <p>Our last rule for pointer constants is, <b>each level of pointer differencing has an
+     independent constant qualification property</b>. 
+     Consider the next code sample.
+  </p>  
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>void</font> <b>fill_in</b>(<font color=red>const</font> <font color=blue>struct a ** <font color=red>const</font> </font><i>location</i>)
+{
+ <font color=red>*</font><i>location</i> <font color=red>=</font> <b>function</b>();
+}
+</pre>
+</td></tr></table>
+  <p>The <font color=red>const</font> keyword was added before the parameter name, which makes the 
+     <i>function scoped</i>, local variable, <i>location</i>, not modifiable within the 
+     body of the function <b>fill_in</b>().
+     So how can we assign a value to it?
+     Nothing is being assigned to it. The pointer that it points to is be assigned with the
+     address returned by <b>function</b>().
+     There are actually three levels that might be constant or non-constant here.
+  </p>
+  <ul>
+    <li>the structure in question is constant, meaning its contents <b>can not</b> be written to</li>
+    <li>the pointer to such a structure, pointed to by <i>location</i>, at <font color=red>*</font><i>location</i> is not-constant, meaning it <b>can</b> be written to</li>
+    <li>the variable <i>location</i> itself, is constant, meaning it <b>can not</b> be written to</li>
+  </ul>
+
+  <p>Suppose that we wanted that middle item to be constant as well.
+     In such a case we would again be documenting to the API user that our passed value would
+     not be manipulated.
+     This time let us show the error would create by rewritting the <b>fill_in</b>() function
+     so that we would be violating the behavior our prototype advertises to its callers.
+  </p>
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>void</font> <b>fill_in</b>(<font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> <font color=blue>*</font> <font color=red>const</font> <i>location</i>)
+{
+ <font color=red>*</font><i>location</i> <font color=red>=</font> <b>function</b>();
+}
+</pre>
+</td></tr>
+</table>
+
+<table>
+<tr><td bgcolor=darkseagreen>
+<pre>
+<font color=black>error: assignment of read-only location ‘*location’</font></pre>
+</td></tr></table>
+
+   <p>The syntax here being that the <font color=red>const</font> keyword goes at each level differencing in the
+      variable declaration.
+      Another variation would be the below correct function that advertises and abides by, its claim
+      to not manipulate the structure contents, or the pointer to the structure, yet allows the function
+      body to manipulate its own local variable that holds the passed parameter.
+   </p>
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8</font></pre>
+</td>
+
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=red>void</font> <b>make_use_of</b>(<font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> <font color=blue>*</font><i>location</i>)
+{
+ <font color=red>const</font> <font color=blue>struct a *</font> <font color=red>const</font> ptr_a <font color=red>=</font> <font color=red>*</font><i>location</i>;
+ <font color=red>const</font> <font color=blue>struct a *</font>ptr_b <font color=red>=</font> <font color=red>*</font><i>location</i>;
+
+ ptr_b <font color=red>=</font> <font color=brown>NULL</font>;
+ <i>location</i> <font color=red>=</font> <font color=brown>NULL</font>;
+}
+</td></tr></table>
+  <ul>
+    <li>the "a" structure in question is constant, meaning its contents <b>can not</b> be written to</li>
+    <li>the pointer to such a structure, pointed to by <i>location</i>, at <font color=red>*</font><i>location</i> is also constant, meaning it <b>can not</b> be written to</li>
+    <li>the local variable <i>location</i> itself, is not constant, meaning it <b>can</b> be written to</li>
+    <li>the local variable ptr_a, is constant, meaning it <b>can not</b> be written to</li>
+    <li>the local variable ptr_b, is not constant, meaning it <b>can</b> be written to</li>
+  </ul>
+
+
+  <hr align=center width=50%>
+  <p>Remember our three rules.
+  </p>
+  <ul>
+   <li>the constant property only last for a single typed variable at compile time</li>
+   <li>syntactically valid, yet logically useless variable declarations are allowed</li>
+   <li>each level of pointer differencing has an independent constant qualification property</li>
+  </ul>
+
+  <br>
+  <h2 align=center><a id=restrict>Restrict</a></h2>
+  <p>The <a href="http://en.wikipedia.org/wiki/Restrict"><font color=red>restrict</font></a> keyword is another new qualifier from 
+     <a href="http://en.wikipedia.org/wiki/C99">C99</a>.
+     There are a number of good <a href="http://developers.sun.com/solaris/articles/cc_restrict.html">
+     explinations for it's use on the web</a>.
+     When pointers have the restric qualifier, it means that the location a pointer points to
+     is not also pointed to by another pointer (in that scope), or overlapped by another pointed to
+     region, collectively refered to as <i>aliasing</i>.
+     When not used, compilers can not take certain shortcuts they otherwise could if they knew
+     certain operations would not be performed on overlapping memory.
+  </p>
+
+  <p>A much discussed example is the string.h function <b>memcpy</b>(), which
+     is one of the most used C functions arround.
+     It simply copies an arbitrary section of memory to another. 
+     Long ago it might be prototyped like this:
+  </p>
+
+<table><tr><td bgcolor=wheat>
+<font color=red>char *</font><b>memcpy</b>(<font color=red>char *</font><i>destination</i>, <font color=red>char *</font><i>source</i>, <font color=red>int</font> <i>length</i>);
+</td></tr></table>
+
+  <p>Well, first the void pointer was standardized, so that replaced the <font color=red>char *</font>.
+     Also address spaces (and pointer sizes) were not always the same word size as <font color=red>int</font>,
+     so the <font color=brown>size_t</font> macro was used for the byte count.
+     The newer meanings of <font color=red>const</font> came into being, and that allowed the <i>source</i>
+     parameter to be qualified as read only.
+     Finally, the <font color=red>restrict</font> qualifier in the prototype allows for more
+     optimized implementations of <b>memcpy</b>().
+     Thus the prototype on most environments today are more like this:
+   </p>
+
+
+<table><tr><td bgcolor=wheat>
+<font color=red>void *</font><b>memcpy</b>(<font color=red>void * restrict</font> <i>destination</i>, <font color=red>const void * restrict</font> <i>source</i>, <font color=brown>size_t</font> <i>length</i>);
+</td></tr></table>
+
+  <p>What that means is that the <i>source</i> and <i>destination</i> regions would be non-overlapping.
+     Actually that just made things more formal as that was always in the description of the function.
+     If you wanted to move a region over a little by copying it to an overlapping section, then
+     one was to use the <b>memmove</b>() function.
+     The trouble came from the coincidence that on some platforms, some implementations,
+     called in certain ways, <b>memcpy</b>() would behave the same as <b>memmove</b>(), and some programmers
+     used it for that reason. 
+     As the newer libraries started to make use of the version with <font color=red>restrict</font>,
+     some problems made it all the way to users.
+  </p>
+
+  <p>Longer story short is that <font color=red>restrict</font> atctually should be used in almost every case.
+     What I want to point out is that in practice <font color=red>__restrict</font>
+     is likely used instead.
+     In the case where there is some compiler support for C99 it typically must be toggled on, and
+     doing so may break other things.
+     In such cases, or in the case of no attempt at C99, often the keyword <font color=red>__restrict</font>
+     is provided instead.
+     <font color=red>__restrict</font> support can also be found in compiler specific extensions of other languages
+     such as C++.
+     My two cents would be to use <font color=red>__restrict</font> in code, and <font color=red>restrict</font>
+     in API documentation.     
+  </p>
+
+  <br>
+  <h2 align=center id=UTF-8>UTF-8 vs. unsigned char / signed char / char</h2>
+  <p>By now, of course, you are using <a href="http://www.thomasstover.com/unicodepresentation.pdf">UTF-8</a> everywhere, right?
+     That means that NULL terminated C strings should be able to use all 8 bits in each byte.
+     For a while there I didn't understand why that didn't mean that that strings should be defined 
+     as <font color=red>unsigned char</font> arrays to designate compatibility with UTF-8.
+     I even tried doing that, but the compiler warnings drove me nuts when calling stdio.
+     As it turns out, unlike, say <font color=red>int</font>, which implies <font color=red>signed int</font>, <font color=red>char</font> simply means more of a compiler default
+     for <font color=red>signed char</font> or <font color=red>unsigned char</font>.
+     GCC treats it more like a third variation entirely. 
+     The point being, that on recent gcc, <font color=red>char</font> arrays are in fact unsigned already for UTF-8.
+  </p>
+
+  <br>
+  <h2 align=center>More Examples</h2>
+  
+  <p>For illustration, take this function from the <a href="http://www.thomasstover.com/sensorypresence/dataset_api.html">SP Dataset API</a>, allong with the function body bellow.
+  </p>
+<table>
+
+<tr><td bgcolor=lightgrey>
+  <p><font size=6>“</font>In the case of buidling a sp dataset that models rows of nodes matched with columns of types,
+     the above function starts a new row. 
+     It takes pointer to a record structure pointer, <i>root_record</i>, and creates a new 
+     record structure.
+     If this is the first such "row" (indicated by <i>root_record</i> being NULL, then <i>root_record</i>
+     will be updated to point to the new structure as it is now the root record.
+     If this is another "row" in the "table", then next and previous members are updated to reflect
+     that this the last row. 
+     Note also that the row list is circular so that the previous list item on the fist row is the
+     last row, and the next list item of the last row is the first row.
+     A pointer to the new record structure is also returned, or NULL on error.<font size=6>”</font> 
+  </p>
+</td></tr>
+</table>
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top align=right>
+<pre>
+<font color="000000">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37</font></pre>
+</td>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=blue>struct sp_dataset_record *</font>
+<b>sp_dataset_node_by_type_new_node</b>(<font color=red>char * const __restrict</font> <i>last_error</i>, <font color=red>unsigned int const</font> <i>error_size</i>,
+                                 <font color=blue>struct sp_dataset_record ** <font color=red>const __restrict</font> </font><i>root_record</i>)
+{
+ <font color=blue>struct sp_dataset_record *</font>new_record;
+
+ <font color=red>if</font>(<i>root_record</i> <font color=red>==</font> <font color=brown>NULL</font>)
+  <font color=red>return</font> <font color=brown>NULL</font>;
+
+ <font color=red>if</font>((new_record <font color=red>=</font> <a href="http://library.gnome.org/devel/glib/stable/glib-Memory-Slices.html"><b>g_slice_alloc0</b></a>(<font color=red>sizeof</font>(<font color=blue>struct sp_dataset_record</font>))) <font color=red>==</font> <font color=brown>NULL</font>)
+ {
+  <font color=red>if</font>(<i>last_error</i> <font color=red>!=</font> <font color=brown>NULL</font>)
+  {
+   <b>snprintf</b>(<i>last_error</i>, <i>error_size</i>, "<font color=teal>g_slice_alloc0() failed</font>");
+  }
+  <font color=red>return</font> <font color=brown>NULL</font>;
+ }
+
+ <font color=red>if</font>(<font color=red>*</font><i>root_record</i> <font color=red>==</font> <font color=brown>NULL</font>)
+ {
+  <font color=red>*</font><i>root_record</i> <font color=red>=</font> new_record;
+  <font color=red>return</font> new_record;
+ }
+
+ <font color=red>if</font>((<font color=red>*</font><i>root_record</i>)<font color=red>-&gt;</font>next <font color=red>==</font> <font color=brown>NULL</font>)
+ {
+  new_record<font color=red>-&gt;</font>prev <font color=red>=</font> <font color=red>*</font><i>root_record</i>;
+ } <font color=red>else</font> {
+  new_record<font color=red>-&gt;</font>prev <font color=red>=</font> (<font color=red>*</font><i>root_record</i>)<font color=red>-&gt;</font>prev;
+ }
+
+ (<font color=red>*</font><i>root_record</i>)<font color=red>-&gt;</font>prev <font color=red>=</font> new_record;
+
+ new_record<font color=red>-&gt;</font>prev<font color=red>-&gt;</font>next <font color=red>=</font> new_record;
+
+ <font color=red>return</font> new_record;
+}
+</pre>
+</td></tr></table>
+  <ul>
+   <li>The structure the return value points to is not constant. 
+       That is becuase sp_dataset_record structures have many functions that modify them.
+   </li>
+
+   <li>The address for the <i>last_error</i> buffer is not modifiable inside the function.
+       No other variable within scope of the function also points to the same error buffer.
+   </li>
+
+   <li><i>error_size</i> is not modifiable inside the function.
+   </li>
+
+   <li>Within the function the address pointed to by <i>root_record</i> is not changed.</li>
+
+   <li>The pointer that <i>root_record</i> points to is non-constant because it will
+       be set in the case of a new dataset being created.
+   </li>
+
+   <li>The structure pointed to by the pointer pointed to by <i>root_record</i> is also
+       non-constant, since added nodes record to the dataset will potentially modify it.
+   </li>
+
+   <li>The pointer <i>root_record</i> points to, <font color=red>*</font><i>root_record</i>,
+       can not be marked as <font color=red>__restrict</font>
+       as it has nested pointers that likely alias it. However the address <i>root_record</i>
+       itself holds, is just of the caller's local variable holding <i>that</i> value.
+   </li>
+
+   <li>The local variable, new_record, is neither a constant pointer, or a pointer to a
+       constant structure, since it will hold a newly created value that will have its
+       members set to initial values.
+   </li>
+  </ul>
+
+<table>
+<tr><td bgcolor=lightgrey>
+  <p><font size=6>“</font>For use with node by type datsets. 
+     For a given node record, <i>node_record</i>, attempt to find a record used for types of
+     domain type <i>point_domain_details</i>.     
+    <font size=6>”</font> 
+  </p>
+</td></tr>
+
+<tr>
+</table>
+
+<table cellspacing=0 cellpadding=5><tr>
+<td bgcolor=wheat valign=top>
+<pre>
+<font color=blue>struct sp_dataset_record *</font>
+<b>sp_dataset_node_by_type_check_for_type_on_node</b>(
+             <font color=red>char * const __restrict</font> <i>last_error</i>, <font color=red>unsigned int const</font> <i>error_size</i>, 
+             <font color=red>const</font> <font color=blue>struct sp_dataset_record *</font> <font color=red>const</font> <i>node_record</i>,
+             <font color=red>const</font> <font color=blue>struct sp_domain_type_render_info *</font> <font color=red>const</font> <i>point_domain_details</i>)
+{
+ <font color=red>const</font> <font color=blue>struct sp_dataset_record *</font>node;
+ 
+ <font color=red>if</font>(node_record <font color=red>==</font> <font color=brown>NULL</font>)
+  <font color=red>return</font> <font color=brown>NULL</font>;
+
+ node <font color=red>=</font> node_record<font color=red>-&gt;</font>child;
+ <font color=red>while</font>(node <font color=red>!=</font> <font color=brown>NULL</font>)
+ {
+  <font color=red>if</font>(node<font color=red>-&gt;</font>point_domain_details <font color=red>==</font> point_domain_details)
+   <font color=red>return</font> (<font color=blue>struct sp_dataset_record *</font>) node;
+
+  node <font color=red>=</font> node<font color=red>-&gt;</font>next;
+ }
+
+ <font color=red>return</font> <font color=brown>NULL</font>;
+}
+</pre>
+</td></tr></table>
+
+  <ul>
+   <li>The structure the return value points to is not constant. 
+       That is becuase sp_dataset_record structures in general are considered to be 
+       modifiable objects.
+       Returning one as constant would yield errors and encourage overiding typecasts.
+       The structure in question would have had to have been handed to the function anyway,
+       and would have probably been in a non-constant state to start with if it came from
+       another API function.
+   </li>
+
+   <li>The address for the <i>last_error</i> buffer is not modifiable inside the function.
+       No other variable within scope of the function also points to the same error buffer.
+   </li>
+
+   <li><i>error_size</i> is not modifiable inside the function.
+   </li>
+   
+   <li><i>node_record</i> can not be marked with <font color=red>__restrict</font> because
+       it could be aliased by <i>node_record</i><font color=red>-&gt;</font>child<font color=red>-&gt;</font>parrent
+   </li>
+
+   <li>Inside the function, the address <i>node_record</i> points to is not modifiable</li>
+
+   <li>The structure for <i>node_record</i> is marked as contant.
+       This actually gives a "loop hole" for taking a constant sp_dataset_record structure and 
+       deriving a non-constant one with out an explicit type cast.
+       This is unlikely an issue since these structures are non-constant in general.
+       What this does do that is worth while, is tell the API user and the compiler that,
+       this particular function is not one that should be modifying such an object.
+   </li>
+
+   <li>Not only should the type render info object not be modified, but the address should
+       hold for the durration of the function in the variable <i>point_domain_details</i>.
+       Deeply nested pointers of <i>node_record</i>, may alias this address though.
+   </li>
+   <li>The local variable, node, should not be used to modify sp_dataset_record structure contents,
+       but it will point to different addresses durring the function call. 
+       It too, can not be marked with <font color=red>__restrict</font> since some of the values it will hold
+       will point to objects that themselves alias each other.
+   </li>
+
+  </ul>
+ 
+  <br>
+  <p align="right">© 2011 C. Thomas Stover</p>
+  <p align="right"><i><b>cts</b> at <b>techdeviancy.com</b></i></p>
+        </p><p><a href="./index.html"">back</a></p>
+
+<!-- Begin Footer -->
+          </td>
+         </tr>
+        </table>
+       </td>
+
+      </tr>
+     </table>
+    </td>
+   </tr>
+  </table>
+ </body>
+</html>
+

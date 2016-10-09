@@ -1,0 +1,256 @@
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+  <title>Tech Deviancy - One Time Pad Hardware Device</title>
+ </head>
+ <body bgcolor="#000000" link=#06004d vlink=#06004d alink=#06004d text=#000000>
+
+  <table align=center>
+   <tr>
+    <td>
+     <a href="./index.html"><img src="./td.gif" alt="TECH DEVIANCY"></a>
+    </td>
+   </tr>
+  </table>
+
+  <table valign=top align=center cellpadding=20>
+   <tr>
+    <td valign=top align=center>
+     <table cellpadding=10 cellspacing=0 valign=top  border=1>
+      <tr>
+       <td valign=top background="./bg3.jpg" width=880>
+        <table cellpadding=10 width=100%  border=1> 
+         <tr>
+          <td valign=top align=left>
+<!-- End Header -->
+
+        <p align="right"><i>December 29, 2010</i></p>
+
+        <h1 align="center">One Time Pad Hardware</h1>
+        <h3 align="center">A thought piece incorporating the <a href="http://sharism.cc/">NanoNote</a> for encrypted communication</h3>
+        <hr align="center" color="blacK" width="70%">
+
+        <h3>Background</h3>
+
+        <p>The definition of a cryptography I most site is, "communication in the presence of adversaries". 
+           Which is good because it reminds us that there is more to the field than just computer based techniques,
+           for instance so called 
+           "<a href="http://en.wikipedia.org/wiki/Quantum_cryptography">quantum cryptography</a>" has nothing to do with software algorithms. 
+           Instead it seeks secure communication via physical phenomenon. Similarly, most of these ideas come from a time  before computers anyway. 
+           Never the less computer cryptography is an integral part of our lives today, even if it is quietly ignored by most of it's uses. 
+        </p>
+
+        <p>In the field of cryptanalysis, there is one key point everyone should understand – you 
+           are not qualified to invent your own algorithms, 
+           <a href="http://www.schneier.com/essay-189.html">nor should you even try</a>. 
+           So what are software engineers like ourselves to do? 
+           Typically, the correct approach is to use
+           <a href="http://www.openssl.org/docs/crypto/crypto.html">existing implementations of published
+           widely accepted algorithms</a>.
+           In practice, this really means choosing a category of cipher instead of a specific one. That is because as time goes on, what is an acceptable algorithm choice will inevitably change.
+           How can there be anything secure about a published cipher technique? 
+           The reason is that, except for "one way" algorithms, all modern ciphers are based on the concept of separating the "secrete" components of an encryption scheme out into 
+           <a href="http://en.wikipedia.org/wiki/Cryptographic_key">keys</a>. 
+           So most real world everyday encryption in software on a high level, actually works in 
+           terms of a abstract types of algorithms used in various combinations, with both the choice
+           of ciphers, and the keys for those procedures as somewhat interchangeable parts. 
+           For that reason, most programmers just learn about the different algorithm types, how to
+           use them in various meaningful combinations, and other related secure programming techniques.
+        </p>
+
+        <h3>Algorithm Types</h3>
+
+        <p>These base algorithm types would be what exactly? Of principle concern are three types.
+           First is the "one way" or 
+           "<a href="http://en.wikipedia.org/wiki/Cryptographic_hash_function">hash</a>" routines that take variable length input data and output a fixed sized "checksum". 
+           Often these same algorithms are used for traditional checksum and hashing purposes without
+           a need for security.
+           The usefulness to secure applications comes from the aspired property that while it is easy to generate output from the input, the reverse is impractical or impossible. 
+        </p>
+
+        <p>Next is the so called, 
+           "<a href="http://en.wikipedia.org/wiki/Symmetric_key_algorithm">symmetric ciphers</a>" group. These allow for secure input data to be converted into unreadable data using a key, and given the same key the reverse operation. This is the easiest to understand conceptually. The limiting factor here is how long would it take for the system to fail if every possible key where to be tried. 
+          Often shortcuts to this are possible, such as knowing what some of the input was in the first place might allow the key to be derived, vulnerabilities in the cipher algorithm, or weakness in the randomness of the key itself. 
+          It is common for elaborate schemes of "key rotation", and ciphering fake input data, to be employed.
+        </p>
+
+        <p>There is another group known as "asymmetric" or "key exchange" ciphers. 
+           As the name might imply, they are most used to securely exchanged keys for the above symmetric algorithms above. 
+           In this group are the 
+            "<a href="http://en.wikipedia.org/wiki/Public-key_cryptography">public key infrastructure</a>" schemes we commonly see today where a two keys, one public and one private, additionally allow for secure digital "signatures"
+        </p>
+
+        <h3>Perpetual Motion</h3>
+
+        <p>The world is constantly fighting for ways to both defeat these algorithms and to invent superior ones. It is not possible to say that a given is cipher is "secure", only that no one has publicly demonstrated a successful attack. In fact, someone might have already defeated the systems we use in https web traffic, ssh remote connections, your VPN, etc. No way to say for sure. We can say that for sure such things have happened in the past. That is why stronger and stronger ciphers keep getting used as the versions of those protocol specifications evolve. Is there a better way?
+        </p>
+
+        <p>One very old idea holds such a promise. The so called "one time pad" cipher is, in theory, unbeatable. In short, for every one bit of data you wish to securely transmit, combine it with one bit of random data. Securely share the random bit with the person / computer you are talking to, and no one else will ever be certain if your secret bit of data was a 1 or a 0. The "one time" comes from the aspect that the random bit is used only once. Too good to be true? The devil is in the details. How do you get enough good quality random data? 
+          How do you securely share and hide the random key? 
+          How do you coordinate which bit of random data you are using? Plus, the overall system might (and will) have other vulnerabilities that compromise it in other ways. 
+          This is why the approach is sometimes criticized as cryptography's "perpetual motion machine". 
+        </p>
+
+        <p>That is not to say, that the technique does not have a history of success, or that it can not be used to improve existing systems. 
+        </p>
+
+        <h3>Randomness</h3>
+
+        <p>The idea that it would be difficult to generate enough random numbers for a cryptographic system at first sounds outlandish. 
+           Although this in theory and in practice, is often the weakest point. If the number of possible keys could be reduced from a trillion to a thousand simply because something about the way the key was generated was known, such an 
+           <a href="http://en.wikipedia.org/wiki/Random_number_generator_attack">attack vector</a>
+           would be, and has been used. 
+           It is especially hard for a computer, because it is a machine designed to follow instructions
+           predictably, consistently, and repeatably. 
+           While pseudo-random numbers are common place for things like video game logic, cryptographically strong random numbers are hard to obtain. 
+           Sometimes, the outside world is mined for sources of entropy, like how often a network
+           collision took place in the previous second, the interrupts generated from a mouse moved
+           by a human hand, what the value of all the pixels on the screen currently are, and so forth.
+           For virtual machines serving secure connections at high rates, where many random keys need
+           to generated quickly and consistently, this can be very real problem. 
+        </p>
+
+        <p>Enter the notion of 
+           <a href="http://cryptodox.com/Hardware_random_number_generator">hardware based 
+           random number generators</a>.
+           Such devices of high quality do exist, and are generally found on such devices as SSL accelerator cards. 
+           When VIA started incorporating random number generators on their 
+           <a href="http://www.via.com.tw/en/initiatives/padlock/hardware.jsp">cpu line up</a>,
+           I thought this would start a trend.
+           As it turns out there are some design concerns about being able to have random enough 
+           noise inside a high clock rate, microscopic, CPU.  
+           Recently, I noticed that there are some great choices for dedicated random number generating hardware.
+           In particular, the affordable USB dongle, the 
+           <a href="http://www.entropykey.co.uk/">Entropy Key</a>, which is all about out of the box 
+           compatibility with debian linux. 
+           One way or another I think one could now overcome most of the problems with generating 
+           the large amounts of random data needed for one time pad schemes. 
+        </p>
+
+        <h3>Secure Key Holding </h3>
+
+        <p>Even if two peers had a great set of random data to use, and they exchanged it securely – say physically handing off a flash drive – what would keep someone from just stealing that dataset? Suppose you physically brought a drive full of random numbers to an unstaffed office as part of a hypothetical one time pad based vpn. You would not be able to guarantee someone hadn't just broken in and copied the one time pad. Or imagine after going to all that trouble the machine holding the pad data was compromised. What would stop someone from just copying it remotely. Even if you knew such a break in took place, you would still have to create a new pad. 
+        </p>
+
+        <p>Protection from remote attack could be enhanced if the pad was stored on a separate computer. Perhaps an embedded system with no connections other than to the host computer (the one using the encryption system) via dedicated link. Acting somewhat like a smart card, the pad would never have to leave the key system. Instead it would perform operations on behalf of the host system. A remote attacker who compromised the host system would be able, at most, to perform operations, not steal the pad. Stealing that pad would require compromising the key system through the host system. If the key system itself had a user interface, i.e. lcd and buttons, or keyboard and screen, then the "attack surface" of the key system could be further reduced by not requiring any sort of "configuration software" on the host system that might be leveraged for an attack.
+        </p>
+
+        <p>Still, having the pad (random bits) just laying around on a flash card or drive would be serious week point. One option would be to store the pad in RAM only. That would reduce some of the physical attacks on the system (copying a flash card), but would: limit pad size to available RAM, require the system be powered for the duration of system availability, and complicate the key exchange procedure. However, there is no reason why combinations of cryptographic techniques can't be used in the picture.
+        </p>
+
+        <img src="./online.png" alt="separate key host diagram">
+
+        <p>By bringing in already proven public key infrastructure techniques mentioned above, a system could easily be put together as follows. Two peers share a random one time pad. Locally the pad is divided into segments. Each segment might track some meta data such as if it has already been used. When the pad is used for operations the segment id would also be referenced as part of the message. Each section would also be encrypted with a symmetric cipher. The keys for these cipherings are different on each peer. These keys are then encrypted using the public key in a PKI system
+            (ie <a href="http://en.wikipedia.org/wiki/RSA">RSA</a>) for the peer. So in order to even locally lookup what the random bits are for a section of a the pad, the remote peer would have to decrypt an intermediate key for you. 
+         </p>
+         <p>
+          To physically attack the system as a whole, both peers would need to be compromised. 
+          If the host / key system at each peer model, discused above, was used, then a totall of four 
+          computers would need to be comprised for remote attack to be completely successful.
+          The one time pad would never be transmitted. If the symmetric or asymmetric ciphers were comprised the system is still secure to eavesdropping (man in the middle) attacks. Since that input data sent to the the symmetric cipher was, in theory, truly random, an attempt to guess the intermediate key would not have any way of knowing if it was correct, or would the input help derive the key. If the key was compromised (say in the case of one peer's key system was comprised, or the security of the intermediate key transmission failed) while the other peer sent it over, the use of different keys for different segments would provide some mitigation. All in all, it would certainly a more secure system than without the incorporation of the one time pad. 
+        </p>
+
+        <h3>What could it be used for?</h3>
+
+        <p>For two way communications, different sections of the pad are designated for sending data
+           in either direction (same thing as two pads).
+           While <a href="http://en.wikipedia.org/wiki/Digital_signature">digital signatures</a>
+           in the PKI sense, are not possible, host / identity verification is. 
+           Normally, identify verification is done by demonstrating possession of the private key matching a known public key (usually within a certificate). 
+           Demonstrating possession of the one time pad for the same purpose could be done by simply sending a secrete randomly generated challenge message on a round trip. 
+           Ideally a combination of both types of keys would be required. 
+        </p> 
+
+        <p>The <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">TLS</a> (ssl/https)
+           stack could be modified to use such a system, but it would be more complicated than say 
+           the "smart card with private certificate key" arrangements. 
+           That is because by "using" such as system, several things could be meant: improved host verification security, improved session key exchange security, or even full one time pad encrypted traffic. 
+           It is difficult to imaging how that would work out in the TLS protocol. 
+           On the other hand,
+           <a href="http://en.wikipedia.org/wiki/Secure_Shell">ssh</a> has more flexibility, with a 
+           more free form cipher negotiation phase before the key exchanges. Of course custom applications could be made to use the scheme such as secure mail and messaging. 
+           Ideally, some sort of integration with 
+           <a href="http://live.gnome.org/GnomeKeyring/Architecture">Gnome keyring</a> / 
+           <a href="http://utils.kde.org/projects/kwalletmanager/documentation.php">KDE wallet</a> could be created to both enhance some of those programs existing features, and to allow for a generic driver / interface to the external key system's operation set with fined grained local access controls. Not a simple task, but certainly possible. 
+           The <a href="http://www.openssl.org/">OpenSSL</a> and 
+           <a href="http://directory.fsf.org/project/libgcrypt/">gcrypt</a> libraries have some 
+           support for cryptographic hardware which perhaps could be utilized for these purposes. 
+        </p>
+
+        <h3>What Hardware To Use?</h3>
+
+        <p>The <a href="http://www.entropykey.co.uk/">Entropy Key</a> randomness generator would be a good place to start for pad generation. For the key system, another unusual device might fit the bill perfectly. 
+           I had elaborate plans for the <a href="http://sharism.cc/">NanoNote</a> until I finally
+           got one.
+           I was just dumbfounded with the realization that it only had USB <i>guest</i>, 
+           not <i>host</i> support. 
+           With no other connectivity, you can only externally communicated with device via a host computer. However that would be exactly would you want in this application. The host computer "thinks" a usb nic is plugged in attached to a crossover cable connected to another computer. 
+          The <a href="http://sharism.cc/">NanoNote</a> has a local display and keyboard which would definitely be useful. 
+          The device is small and easily transportable for physical exchange of one time pads.
+          An internal battery would let you hold keys in RAM if you wanted to go that route, 
+          and the micro sd card could hold a sufficiently large pad for many applications. 
+          Another good attribute about the NanoNote is the “trustworthiness” of the hardware. 
+          There is no ultra sketchy <a href="http://en.wikipedia.org/wiki/Acpi">ACPI</a> byte code,
+          Intel <a href="http://www.pcworld.com/businesscenter/article/172192/atandt_to_offer_remote_pc_repairs_without_system_booting.html">remote pc assist</a>, 
+          "<a href="http://en.wikipedia.org/wiki/Trusted_Computing">trusted computing</a>", etc.
+          Of course, there is room for improvement, such as the 
+          <a href="http://www.ingenic.cn/eng/productServ/XBurst/pfCustomPage.aspx">XBurst</a> being 
+          a Chinese die. 
+          Then again there is no such thing as truely <i>trustable</i> hardware outside of a laboratory.
+        </p>
+
+        <p>I imagine a setup where for each peer you wanted to communicated with, the key systems 
+           for both peers would have to be locally connected to a trusted computer
+           (perhaps dedicated old laptop) for pad generation, etc. 
+           This would only need to be done once every time you ran out of "pad", which if your were 
+           only doing host verification and symmetric key exchange could be potentially a very long time. 
+           Somewhat like generating new 
+           <a href="http://en.wikipedia.org/wiki/Public_key_certificate">certificates</a> periodically is done now.
+        </p>
+
+        <img src="./pairing.png" alt="seeding the peers diagram">
+
+        <p>I did a search just now, and while there are some commercial one time pad dongle style solutions out there, I don't know what lengths they go to. Even still, a closed source encryption system is considered by many in the security field to be utterly useless since there is no way to ever know who has had their hand in the code.
+           That is not to say that someone could not maliciously or inadvertently taint the code in 
+           an open system (it has been <a href="http://lwn.net/Articles/281902/">known to happen</a>), but eventually such things get noticed. 
+        </p>
+
+        <h3>Now What?</h3>
+
+        <p>This is not something I can really work on right now, but I wish I could. At least I made the effort to write it down so that someone else who might have otherwise been uninspired might find it. 
+           If you are interested in starting some sort of collaborative effort drop me a line. 
+           For that matter, if you are interested in contracting me to make such a system, especially let me know. 
+        </p>
+
+        <h3>Final Thought</h3>
+        <p>Again remember that one time pads are nothing new, and schemes similar to what I have
+           described are almost certainly in use right now in situations warranting the highest
+           security available.
+           As far as the security if the current main stream algorithmic ciphers goes, I'm of the 
+           opinion that we probably would not be allowed to know about the existence of most of 
+           these techniques if they were not deflatable by somebody somewhere in the first place. 
+        </p>
+        <p><b>UPDATE</b>: Check out this scary LWN 
+           <a href="http://lwn.net/Articles/434275/">article</a>.
+        </p>
+
+  <br>
+  <p align="right">© 2010 C. Thomas Stover</p>
+  <p align="right"><i><b>cts</b> at <b>techdeviancy.com</b></i></p>
+        </p><p><a href="./index.html"">back</a></p>
+
+<!-- Begin Footer -->
+          </td>
+         </tr>
+        </table>
+       </td>
+
+      </tr>
+     </table>
+    </td>
+   </tr>
+  </table>
+ </body>
+</html>
+
+

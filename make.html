@@ -1,0 +1,508 @@
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+  <title>Tech Deviancy - Introduction to GMake</title>
+ </head>
+ <body bgcolor="#000000" link=#06004d vlink=#06004d alink=#06004d text=#000000>
+
+  <table align=center>
+   <tr>
+    <td>
+     <a href="./index.html"><img src="./td.gif" alt="TECH DEVIANCY"></a>
+    </td>
+   </tr>
+  </table>
+
+  <table valign=top align=center cellpadding=20>
+   <tr>
+    <td valign=top align=center>
+     <table cellpadding=10 cellspacing=0 valign=top  border=1>
+      <tr>
+       <td valign=top background="./bg3.jpg" width=880>
+        <table cellpadding=10 width=100%  border=1> 
+         <tr>
+          <td valign=top align=left>
+<!-- End Header -->
+
+  <h1 align="center">The Makefile Quagmire</h1>
+  <h2 align="center">or</h2>
+  <h2 align="center"><i>How I learned to stop Worrying and Love GMake</i></h2>
+  <hr align="center" color="black" width="60%">
+  <p align="center">Thomas Stover, 2006</p>
+  <hr align="center" color="black" width="60%">
+  <h3>What is Make?</h3>
+  <p>If you have not heard of make, it will save you a world of pain. 
+     This article is an introduction and discussion of Makefiles, 
+     GNU Make, and related issues. Examples of complete GMake projects are given. 
+  </p>
+  <p>
+     Some sort of <i>Make</i> program can be found on most Unix environments as 
+     well as a "behind the scenes" technology in some IDEs (integrated 
+     development environment) such as Visual Studio. 
+     At a conceptual level they all share at least one purpose: to automate both
+     the task of repetitive complex steps in a build process, as well as 
+     intelligently deciding which if any of the steps in such a process need to 
+     be performed for a given result. From there features vary widely. 
+     <a href="http://www.gnu.org/software/make/">
+     GNU Make</a> or gmake has support for most features you will ever need and then some.
+     Not only is it almost certainly available on any given Linux system,
+     it can be installed on practically every Unix, and even on Windows. 
+     Be warned however that the world of make is not without its nightmares.
+     Read on, and in minutes learn what has taken me years to sort out. 
+  </p>
+  <h3>How to Use GMake</h3>
+  <p>
+	Lets start with a real example and build on it from there. 
+    Take the following source for a C program. 
+  </p>
+
+<table><caption>example1.c</caption><tr><td bgcolor=wheat><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+
+<font color="red">int</font> <b>function_one</b>(<font color="red">int</font>)
+{
+ <font color="red">return</font> 1;
+}
+
+<font color="red">int</font> <b>main</b>(<font color="red">void</font>)
+{
+ <font color="red">int</font> x;
+ 
+ x <font color="red">=</font> <b>function_one</b>();
+
+ <font color="red">return</font> x;
+}
+</pre></td></tr></table>
+
+  <p>
+    Now let say we use a command such as <b>gcc -o example1 example1.c</b> to build the program.
+    Thats not really that big of deal to type out is it?. What if it were something like
+    <b>gcc -Wall -g -O2 -o example1 example1.c</b>? Still not too terrible, but we can see how
+    things could begin to be a pain to type out correctly each time. One obvious thing to do
+    would be to simply place that command in a shell script. That way if we wanted to build
+    the program again we could just run something like ./build. Our first Makefile example
+    is essentially just that. Although in this case it would seem more complicated
+    than a shell script, this demonstrates a foundation for what is to come. Take the following
+    file named Makefile (case sensitive). 
+  </p>
+
+<table><caption>Makefile</caption><tr><td bgcolor=wheat><pre>
+<font color=royalblue>#This is a comment in our very first Makefile</font>
+<font color=royalblue>#it will build our program, example1 when we type make</font>
+
+<b>example1</b> : <font color=teal>example1.c</font>
+	<font color=green>gcc -o example1 example1.c</font>
+
+
+</pre></td></tr></table>
+  <p><b><i>Important: you must place a real tab (not spaces) before the "gcc" or it will not work.</i></b></p>
+
+  <p>
+    First place both example1.c and Makefile in your current working directory. 
+    If we are on a Linux or Cygwin installation that has make installed we can simply type
+    make. The same goes for an Msys installation on windows (see details about make on windows
+    bellow). If we are on a BSD or other Unix system that has its own native version of make
+    GNU Make, if installed, is typically named gmake. Running make should output the commands
+    that its running, and then you should have the example1 executable in the directory as well.
+    You do not have to specify that our make file is Makefile, because make looks by default 
+    for a file with that specific name. At this point we are no better than a shell script.
+    Lets try something new.
+  </p>
+
+  <p>
+    Without modifying example1.c or deleting example1, run make again. You should get a message
+    along the lines of <i>make: Nothing to be done for "example1"</i>. GMake has figured out 
+    that example1 is newer than its dependencies. By newer or older we mean the time stamps on the files.
+    Change something about the source file, save it, and run make again.
+    The two lines that are not comments compose a Makefile <i>rule</i>. The first line of a rule
+    defines a target and dependencies for that target. The lines beginning with tabs that 
+    follow are the commands to produce the target. The first target in a Makefile
+    is the one gets built by default. A target can be specified on the command line. For example,
+    we could have just as well run <b>make example1</b>. A target's dependencies, to the right
+    of a target separated by a colon, must be either a file's name or another Makefile target. This forms
+    the basic mechanism by which make decides what needs to be done to reach a given target.
+  </p>
+  <p>
+    When programs like make were originally developed compiling a single file could takes several
+    minutes, and a large project could takes days to build. If someone wanted to test out a simple
+    change to one file, waiting forever just to find out a semicolon was left out
+    was unacceptable. By using make you can setup a build system that understands what the minimum 
+    amount of work needed to be done is in any scenario, and automatically get started on whatever that
+    may be all by typing <b>make <i>target</i></b>. Computers continuously growing faster still, can
+    now usually build anything fairly quickly. There are still software packages in existence 
+    that can take hours or days to build on top of the line hardware, but more commonly today 
+    an invocation of make is used to do something in 4 seconds rather than 4 minutes. 
+  </p>
+  <p>
+    Even if you think your project is never going to be big enough to warrant such as setup, it is  
+    good practice for the ones that do. Beyond that a Makefile is a good way to add utility 
+    functions and alternative build options to your project. Common examples include things
+    like install scripts, different executables in the same project, programs with different
+    features or linked with different libraries, and the cleanup of temporary files generated
+    during a build. Also by using Makefiles in standard ways will we see in future articles
+    how GNU Autoconf can help create dynamically created customized site source trees. In such 
+    a setup support for different compilers, host operating systems, and libraries can by 
+    included in your project. Lets move on to another example. Start over with the following 
+    files. First create two subdirectories obj and src.
+    The source files will be placed in the src subdirectory, and the Makefile still in the 
+    parent directory.
+  </p>
+
+  <table cellspacing="25">
+   <tr>
+    <td>
+
+<table><caption>./src/functions.h</caption><tr><td bgcolor="wheat"><pre>
+<font color=green>#ifndef</font> <font color=brown>_functions_h_</font>
+<font color=green>#define</font> <font color=brown>_functions_h_</font>
+
+<font color=green>#define</font> <font color=brown>MAGIC_NUMBER <i><b>4</i></b></font>
+
+<font color=red>int</font> <b>function_one</b>(<font color=red>void</font>);
+<font color=red>int</font> <b>function_two</b>(<font color=red>void</font>);
+<font color=red>int</font> <b>function_three</b>(<font color=red>void</font>);
+
+<font color=green>#endif</font>
+</pre></td></tr></table>
+
+    </td>
+    <td>
+
+<table><caption>./src/function_one.c</caption><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> "functions.h"
+
+<font color=red>int</font> <b>function_one</b>(<font color=red>void</font>)
+{
+ <font color=red>return</font> <font color=brown>MAGIC_NUMBER</font> <font color=red>+</font> 1;
+}
+</pre></td></tr></table>
+
+    </td>
+   </tr>
+   <tr>
+    <td>
+
+<table><caption>./src/other_functions.c</caption><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> "functions.h"
+
+<font color=red>int</font> <b>function_two</b>(<font color=red>void</font>)
+{
+ <font color=red>return</font> <font color=brown>MAGIC_NUMBER</font> <font color=red>+</font> 2;
+}
+
+<font color=red>int</font> <b>function_three</b>(<font color=red>void</font>)
+{
+ <font color=red>return</font> <font color=brown>MAGIC_NUMBER</font> <font color=red>+</font> 3;
+}
+</pre></td></tr></table>
+
+    </td>
+    <td>
+  
+<table><caption>./src/example2.c</caption><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> "functions.h"
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <b>printf</b>("<font color=teal>1() = <b>%d\n</b></font>", <b>function_one</b>() );
+ <b>printf</b>("<font color=teal>2() = <b>%d\n</b></font>", <b>function_two</b>() );
+ <b>printf</b>("<font color=teal>3() = <b>%d\n</b></font>", <b>function_three</b>() );
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+    </td>
+   </tr>
+  </table>
+
+<table><caption>Makefile</caption><tr><td bgcolor="wheat"><pre>
+<font color=royalblue>#Makefile for example 2</font>
+
+<i>CC</i> = <font color=brown>gcc</font>
+<i>FLAGS</i> = <font color=brown>-g</font>
+<i>HEADERS</i> = <font color=brown>./src/functions.h</font>
+
+<b>example2</b> : <font color="teal"><b>$(<i>HEADERS</i>)</b> ./src/example2.c ./obj/function_one.o ./obj/other_functions.o</font>
+	<font color="green"><b>$(<i>CC</i>) $(<i>FLAGS</i>)</b> -o example2 ./src/example2.c ./obj/function_one.o ./obj/other_functions.o</font>
+
+<b>./obj/function_one.o</b> : <font color="teal"><b>$(<i>HEADERS</i>)</b> ./src/function_one.c</font>
+	<font color="green"><b>$(<i>CC</i>) $(<i>FLAGS</i>)</b> -o ./obj/function_one.o -c ./src/function_one.c</font>
+
+<b>./obj/other_functions.o</b> : <font color="teal"><b>$(<i>HEADERS</i>)</b> ./src/other_functions.c</font>
+	<font color="green"><b>$(<i>CC</i>) $(<i>FLAGS</i>)</b> -o ./obj/other_functions.o -c ./src/other_functions.c</font>
+
+<font color=royalblue>#comments can go anywhere</font>
+
+<b>clean</b>:
+	<font color="green">rm -f ./obj/*.o</font>
+	<font color="green">rm -f example2</font>
+</pre></td></tr></table>
+
+  <p>
+   This examples adds several new features. One difference to note here between gmake 
+   and at least the make included with BSD derivatives, is gmake supports the relative file
+   names used above while BSD's make requires full paths to be used on anything not in the 
+   current directory. Again running <b>make</b> will build the example. Let us examine
+   how this example is different from the first. The first three lines after the 
+   comment are Makefile variables. They can be used anywhere in the Makefile by the
+   notation $(<i>variable_name</i>), which make will make a text substitution for the value
+   of the variable. Alluding again to the future article about autoconf, by placing 
+   the command for gcc itself as makefile variable, a different compiler could be
+   used by changing only one value. The FLAGS variable illustrates how by changing 
+   one variable we could decide to build support for debugging or not. The HEADERS
+   variable demonstrates the use of a variable as a target dependency. 
+  </p>
+
+  <p>
+   Next notice the splitting the program into four source files. Using a real
+   build system encourages the use of multiple files. Not only will a build after
+   a small change run faster as a project grows larger, but a cleaner more
+   organized source tree evolves as time moves on. With experience an organizational 
+   style that takes into account the needs of the Makefile, source tree layout,
+   and the build system at large can come naturally. Play around with the source
+   files and run make again and again. What happens when different combinations
+   of the source files get changed before running make? In this example I also 
+   present the way I prefer to place temporary object files and other none 
+   source code temporary files in a separate directory. This is entirely optional as
+   make will still work without doing that. I however love clean directories, and
+   I hate all those nasty temp files everywhere. Plus, if I want to delete the
+   temp files, they are all in one place. 
+  </p>
+
+  <p>
+    That brings us to the last target, clean. A <b>make clean</b> here will always
+    run because it has no dependencies to compare against. A clean target is
+    a common Makefile utility target used to remove any temporary files and
+    prepare for a complete build from scratch. 
+  </p>
+
+  <p>
+    In the next example we will take the functions in the files function_one.c,
+    and other_functions.c and place them in a static library. Our example's
+    main file will be a client driver for that lib. As the project is kept
+    small to be easy to understand, you should imagine how these simple
+    concepts could be used on a larger scale with far more complicated interdependencies. 
+    Take the same source files from the last example, but use this new Makefile.
+  </p>
+
+<table><caption>Makefile</caption><tr><td bgcolor="wheat"><pre>
+<font color=royalblue>#Makefile for example 3</font>
+
+CC = <font color=brown>gcc</font>
+FLAGS = 
+LIBHEADERS = <font color=brown>./src/functions.h Makefile</font>
+LIBOBJS = <font color=brown>./obj/function_one.o ./obj/other_functions.o</font>
+LIBDIR = <font color=brown>/usr/lib/</font>
+INCLUDEDIR = <font color=brown>/usr/include/</font>
+
+<b>testlibrary</b> : <font color=teal>$(LIBHEADERS) ./src/example2.c libfunctions.a</font>
+	<font color=green><b>$(<i>CC</i>)</b> <b>$(<i>FLAGS</i>)</b> -o testlibrary ./src/example2.c libfunctions.a</font>
+
+<b>libfunctions.a</b> : <font color=teal>$(LIBOBJS)</font> 
+	<font color=green>ar rcs libfunctions.a $(LIBOBJS)</font>
+
+<b>./obj/function_one.o</b> : <font color=teal>$(LIBHEADERS) ./src/function_one.c</font>
+	<font color=green><b>$(<i>CC</i>)</b> <b>$(<i>FLAGS</i>)</b> -o ./obj/function_one.o -c ./src/function_one.c</font>
+
+<b>./obj/other_functions.o</b> : <font color=teal>$(LIBHEADERS) ./src/other_functions.c</font>
+	<font color=green><b>$(<i>CC</i>)</b> <b>$(<i>FLAGS</i>)</b> -o ./obj/other_functions.o -c ./src/other_functions.c</font>
+
+<b>clean</b> :
+	<font color=green>rm -f ./obj/*.o</font>
+	<font color=green>rm -f example2 libfunctions.a</font>
+
+<b>install</b> : <font color=teal>libfunctions.a</font>
+	<font color=green>install libfunctions.a $(LIBDIR)</font>
+	<font color=green>install ./src/functions.h $(INCLUDEDIR)</font>
+
+<b>binpackage</b> : <font color=teal>libfunctions-1.0.tgz</font>
+
+<b>libfunctions-1.0.tgz</b> : <font color=teal>libfunctions.a</font>
+    <font color=green>mkdir libfunctions</font>
+    <font color=green>cp libfunctions.a libfunctions</font>
+    <font color=green>cp ./src/functions.h libfunctions</font>
+    <font color=green>tar -czf libfunctions-1.0.tgz ./libfunctions</font>
+    <font color=green>rm -rf libfunctions</font>
+
+</pre></td></tr></table>
+  
+  <p>Let's rundown the new things in this version. Notice that the FLAGS macro is blank. This is to show
+     that it is perfectly fine to have empty values for variables. Next besides changing HEADERS
+     to LIBHEADERS, the Makefile itself is added. With this little optional trick if you make a 
+     change to the actual make file, make will just rebuild everything instead of having to go 
+     through <b>make clean; make</b>. I find it handy for times such as just after you do a 
+     <b>svn update</b> that really warrant a clean build without you realizing it. The other new
+     variables illustrate how things such as installation locations that users will have a good chance
+     of wanting to change should be easy to find and self explanatory. Also observe that the 
+     dependencies of dependencies do not have to be explicitly listed as make derives those for us.
+     Two new utility targets have been added, install, for installing the library and its 
+     interface header, and binpackage, for creating a redistributable binary package. 
+  </p>
+
+  <h3>Beware of Features</h3>
+  <p>
+    Although there are plenty of other features that can be placed in your Makefile, be warned 
+    that beyond what we have covered here it gets sloppy and pointless. I strongly advocate clean,
+    human readable Makefiles. One of the worst things that you can have is to end up with a dog
+    and pony show for a build system. Trust me, I've learned that the hard way. You will undoubtedly
+    want more from your Makefile based build system as time goes on. For that there are other 
+    software projects such as autoconf, that can by supplementing your Makefiles, accomplish a great
+    deal without having to try to use make for something it's not.
+  </p>
+
+  <p>
+    One of the most irritating Make behaviors certainly needs to be mentioned. Most people, books,
+    and other sources seem to love what is known as <i>implied</i> rules. I hate them mostly
+    because they make it so hard to learn and understand what in the world Make is really 
+    doing and what it's all about. This is especially so for the beginner who is also new to gcc.
+    In some cases if a rule is not explicitly defined for an object file for example, Make might
+    think it knows what to do anyway if there is a source file named a certain way. I strongly 
+    discourage the use of this "Makefile shorthand" because requiring someone to remember these
+    things on top of everything else causes a Makefile to be just that much harder to read. So, 
+    if you ever start swearing that Make just did some steps by itself you are not crazy. Just check
+    for any typos and make sure everything is explicitly listed.
+  </p>
+
+  <p>For a detailed look at more of the dark side of make, I will refer you to other sources,
+     such as this paper, 
+     <a href="http://www.agsrhichome.bnl.gov/Controls/doc/WorkingWithMakefiles/WorkingWithMakefiles.html">
+     Working with Makefiles</a>.
+  </p>
+
+  <h3>Parallel Processing and GNU Make</h3>
+
+  <p>In the previous example, the library's two source files could be compiled at the
+     same time since neither depends on each other. As a Make project grows, more and 
+     more situations arise were Make could be working on more than one target at a time.
+     If we were using a dual core machine for example, then we could actually do more than one task at
+     once. GMake's command line option, <b>make -j <i>max_number_of_simultaneous_jobs</i></b>
+     allows use to take advantage of SMP hardware. I recently tested an almost 99% performance
+     increase while building various source trees from scratch on a dual core athlon with <b>make -j 2</b>.
+     Of course if I had a 32-way Sun server to myself I could have just as easily gone 
+     with <b>gmake -j 32</b>. Even if you do not have SMP hardware at your disposal you
+     should check out <a href="http://distcc.samba.org/">distcc</a>. Distcc along with GMake
+     allows a compile farm to be built with as many workstations or servers you can spare.
+  </p>
+
+  <p>If you find that your Makefile builds everything fine normally, but fails when used with
+     simultaneous jobs, it is probably due to an unlisted dependency. Start by double checking
+     the dependencies for the target that failed.
+  </p>
+
+  <h3>Other Uses for Make</h3>
+   <p>
+     GMake is by no means limited to working with C, or C++. Any language that 
+     requires compiling or processing that can be divided into separate
+     tasks can utilize the advantages of a Make build system. Even more
+     interesting is that Make can be found in use for all kinds of things
+     beyond the scope of programing. One area is the intelligent automation
+     of document rendering procedures, such as composing html files from
+     separate header, footer, banner, and body files. It is not unheard of to see 
+     a Make system drive a scientific or render batch process.
+     Make has even been used to calculate dependencies at boot time to
+     intelligently start service daemons in the correct order. Anything that is
+     based on performing incremental steps towards a larger goal is a potential
+     candidate for a Make's help.
+   </p>
+
+  <h3>Recursive Make</h3>
+  <p>
+    A recursive Make is when a command in a Makefile's target itself calls make.
+    Sometimes we see this when a project includes the entire source tree of another
+    project such as a library along with its distribution for convenience or other
+    reason. Other times the purpose of this technique is bring the Makefile down
+    to a smaller size. A large project might be divided into several source directories
+    each with its own Makefile. One master Makefile in the tree's root directory includes
+    all the others. The issues start when you want Make to be aware of dependency 
+    relationships across different files. What happens instantly after setting it all
+    up though is that your once logical, but large single Makefile becomes a complete disaster.
+    Don't say I didn't warn you. Still not convinced recursive make is totally stupid?
+    Consult these links that made me a believer.</p>
+  <p>
+  <a href="http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html"> An excellent
+     paper on what's wrong with recursive Makefiles</a></p>
+  <p>
+  <a href="http://kolpackov.net/projects/build/benchmark.xhtml">Analisys of the better 
+     parallelism in non-recursive Makefiles</a></p>
+
+  <h3>Automake</h3>
+  <p>
+    GNU Automake is tool that generates Makefiles from automake input files. It is closely
+    related to GNU Autoconf, yet still a separate piece of software entirely. Many consider
+    it <i>the</i> way to work with Make. As I make my own way through the maze of open
+    source centric contemporary Unix software engineering tools and practices, I have come
+    to the contrarian viewpoint that Automake is worse than useless. I have spent several
+    days many times fighting it in an attempt to do something close to what I wanted; it was
+    futile. Automake is one of those uppity academic software packages that aims to take
+    complete control over as much of your project as possible. If you don't understand
+    why it's so inflexible, well that's simply because you are not cool enough. You can
+    literally take one of the tiny examples above, covert it to an automake based project,
+    and end up with a Makefile that is totally incomprehensible. As it runs to produce 
+    a clean build you would see page after page of nonsense scroll by, burning through
+    cpu cycles for somewhere in the neighborhood of 20,000% longer than what you had to
+    start with. If you have ever downloaded and built the code of a big open source project
+    and wondered what in the world it was doing when you typed make, it is likely that
+    70% or more of that is fluff from using automake. Automake loves the recursive make,
+    and it is a control freak about file locations and and other details. Often things
+    like supporting cross compilers becomes even more complicated that need be. 
+    I have yet to realize a use for it. 
+  </p>
+  <p>
+    So why does anyone use it? It is not that it doesn't really accomplish its goals, 
+    its that it inflicts as much pain as it can along the way. One aim is to be able
+    to render a Makefile for any version of Make out there. This is useful and impressive,
+    but with the ability to install GMake (which itself uses automake) almost anywhere -
+    it's a hard sell.  
+  </p>
+
+
+  <h3>GNU Make on Windows</h3>
+  <p>
+    GMake can even be used on windows in a few different ways. The first
+    is if you use cygwin. Next <a href="http://www.mingw.org">MinGW</a> (a gcc for windows)
+    comes with natively compiled version of gmake with some significant features missing. 
+    A better version comes with <a href="http://www.mingw.org/msys.shtml">MSys</a> (a clean
+    subset of cygwin for development purposes with a nice installer). Remember that you
+    can put any commands you want in a Makefile rule. This includes windows programs such
+    as visual studio's command line compiler. If you are interested in this also check
+    out <a href="http://www.wsinnovations.com/softeng/projects/wcc/index.html">WCC</a>. On
+    that same note, be aware that Visual Studio uses its own incarnation of make <i>nmake</i>.
+    Its pretty useless overall though, but if you are looking to migrate a Visual Studio 
+    project to a real build system examine the nmake <i>command file</i> for a starting place.
+  </p>
+
+  <h3>Prelude to Autoconf</h3>
+  <p>
+    One very important thing we have not seen is how to conditionally change the
+    dependencies for a target without editing the Makefile.
+    For instance suppose we needed to have different features available in different
+    editions of our library in example 3. If we could somehow adjust the value
+    of the LIBOBJS variable, and by organizing our source files accordingly then
+    we would have a means to do so.
+    There are strategies
+    for trying this, such as consulting environment variables or the really 
+    obscure Makefile if. I have found with much headache to not even try these. 
+    In my opinion the only real way to that sort of thing is by dynamicly regenerating
+    the Makefile itself. That is exactly what GNU Autoconf is for, and that is a story
+    for another day.
+  </p>
+
+  <br>
+  <p align="right">© 2006, 2011 C. Thomas Stover</p>
+  <p align="right"><i><b>cts</b> at <b>techdeviancy.com</b></i></p>
+        </p><p><a href="./index.html"">back</a></p>
+
+<!-- Begin Footer -->
+          </td>
+         </tr>
+        </table>
+       </td>
+
+      </tr>
+     </table>
+    </td>
+   </tr>
+  </table>
+

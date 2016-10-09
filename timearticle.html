@@ -1,0 +1,564 @@
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+  <title>Tech Deviancy - Advanced Time Considerations</title>
+ </head>
+ <body bgcolor="#000000" link=#06004d vlink=#06004d alink=#06004d text=#000000>
+
+  <table align=center>
+   <tr>
+    <td>
+     <a href="./index.html"><img src="./td.gif" alt="TECH DEVIANCY"></a>
+    </td>
+   </tr>
+  </table>
+
+  <table valign=top align=center cellpadding=20>
+   <tr>
+    <td valign=top align=center>
+     <table cellpadding=10 cellspacing=0 valign=top  border=1>
+      <tr>
+       <td valign=top background="./bg3.jpg" width=880>
+        <table cellpadding=10 width=100%  border=1> 
+         <tr>
+          <td valign=top align=left>
+<!-- End Header -->
+
+  <p align=right><i>last updated</i>, <b>April 22, 2011</b></p>
+
+  <h1 align="center">Advanced Time Considerations</h1>
+
+  <hr align="center" color="black" width="60%">
+
+  <p align="center">December 2006</p>
+  <hr align="center" color="black" width="60%">
+
+  <h2>Scope of Discussion</h2>
+  <p>The time keeping features of modern computers is something often taken for granted until 
+     one actually has to create some software that utilizes them. The good news is that this area
+     has been around for a while and therefor some outstanding solutions exist for most situations. 
+     The bad news is that computer time is still widely misunderstood and often the cause of major,
+     yet avoidable problems.      
+     For the sake of giving me a good resource to point people to who could use a good run down
+     on this area, I have written this article. So if you ever need to work on a program that in
+     any way uses clocks, calendars, and computers read on and you might catch something you never thought
+     about before. 
+  </p>
+
+
+  <h3>The Basic Problem</h3>
+  <p>The basic problem is that our calendar system is actually very complicated. Days of the week, months, 
+     leap years, time zones, and other details can quickly add up to a huge mess. Let us say we need
+     to know the date and time 5 minutes from now. Simple right? Start making a program to do that,
+     for that matter <i>do it properly</i>, and your head will explode. Now throw in a situation were
+     multiple users need to utilize the program from different places in the world all simultaneously
+     connected through the internet in different time locals. Starting to see the challenge? Remember Y2K?
+  </p>
+  <p>This is of course not even to mention even more demanding tasks such as translating times to 
+     something other than the Gregorian calendar (the calendar system most commonly recognized in
+     the west as "normal"). Perhaps you have clients in Israel, China, Iran, India, or even Russia, 
+     that would like to do something with a different calendar. Though this may not seem like something
+     you would ever need to worry about there are much more common tasks that are deceptively simple.
+  </p>
+  <p>Think of a real time data logger that needs to save a value every single hour. How should it behave
+     during the switch in and out of daylight saving time? How should a PVR behave in the same situation?
+  <p>
+  <p>By and large, one does not really need to do that much to solve these kinds of problems as long as 
+     he or she has some understand of what is going on. 
+     Too often programmers' and administrators' sentiment is that of "let the OS worry about it", or
+     "just use the library functions without thinking". This is really the wrong attitude seeing as
+     how so many things can go wrong.
+  </p>
+
+
+  <h3>The Basic Solution</h3>
+  <p>The root of the solution to simplifying computational time keeping is very simple. 
+     <i>Separate the task of tracking the passage of time, from that of calendar operations.</i>
+     To put it another way, the science of atomic clocks is another field of study from astronomy.
+     The majority of hardware and software around today at some level tracks time in terms of
+     <i><b>the number of seconds past 1970 UTC</b></i>. 
+     This way programs can simply think of the time and date as a simple
+     integer. Every second has a unique and unambiguous number. Saving the time something happened 
+     requires just one number. Moving forward or backward in time requires simple arithmetic. Time
+     before midnight December 31 1970 UTC is expressed as a negative number. When
+     a date and time needs to be presented to a human, this integer gets <i>rendered</i> into what 
+     ever calender system, time zone, and format is needed. The reverse takes place when the time
+     is input from a human. 
+     This is often referred to as <i>Unix time</i>, or even <i>ANSI C time</i>.
+  </p>
+  <p>So to answer the above question, the data logger and PVR never even need to think about 
+     daylight saving time except for displaying, and getting times from users.
+     Typically this is all done with relatively standard C library functions. Higher level 
+     languages of course wrap around these (if you are lucky enough to even get some exposed
+     means to use them). The basic clock function is <b>time()</b>, and the basic calendar render / parser
+     routines are <b>localtime()</b>, <b>gmtime()</b>, <b>strftime()</b>,
+     and <b>mktime()</b> defined in <b>time.h</b>. See my portable time in C cheat sheet below.
+     Check with your man pages or other documentation for further details, 
+     and various other functions. Windows of course does not disappoint those expecting its
+     usual silliness, by providing a dozen or so supplemental API functions to preform the
+     exact same tasks with much more difficulty. Consult the Windows platform SDK for details. 
+     It is also worth noting that any serious time aware application should not be run on any
+     Win 9x/ME version.
+  </p>
+
+  <h2>Solutions have Problems</h2>
+
+  <h3>32 bit Platforms</h3>
+  <p>On most 32 bit platforms, a signed 32 bit integer is used for the time value. This
+     gives an effective range of December 12, 1901 8:45:52 PM GMT through January 1,
+     2038 3:14:07 AM GMT. The Y2K "crisis" has come and gone, but the 
+     <a href="http://pw1.netcom.com/~rogermw/Y2038.html">Y2038</a> issue is quite real.
+     Many systems already have solutions in place. 64 bit Unix systems use a 64 bit integer, and
+     are unaffected. More likely to be an issue are file formats that use a 32 bit number. If you 
+     are designing a system to be used for a while, or that holds historical records prior to 1902,
+     you will need more than 32 bits. Some formats that intended to only hold dates in the present
+     use unsigned 32 bit. This trades dates prior to 1970 for longer future use. A full 64 bits of
+     file storage can be hard to justify in a binary file format. Often a 40 or 48 bits may be used,
+     or even a 48 bits for seconds, and 16 bits for fractions of a second. Even still, it certainly
+     beats 64 or more <u>bytes</u> for storing time as text. 
+  </p>
+  <p>Note that in addition to a host being 64 bit, the C runtime libraries must also support time
+     beyond a 4 byte integer. A quick test on 64 bit Fedora Core 4 installation running on x86_64,
+     yields no problems for years like 1712 and 2135.
+     For years before 1900 I used a negative number in the <b>tm</b> structure.
+     Be careful, because that same test on a 32 bit box generated a segmentation fault.
+  </p>
+
+  <h3>Daylight Saving Time</h3>
+  <p>Daylight saving time is unequivocally one of the most profoundly idiotic ideas in the history
+     of the human race. In only stands to reason that it of course causes problems with software. 
+     DST can and is taken into account in calendar and locale functions on most platforms. The
+     primary problem is that <b>at any time a government can, and will change the rules</b>
+     for moving in and out of DST. What this means is that if a system really wants to use a DST
+     scheme, it needs to have a way to be updated. For example, in 2005 the US decided to change
+     to a new rule starting in 2007. What sort of chaos this creates with older systems with out
+     of date locale definitions remains to be seen. 
+     See also: <a href="http://webexhibits.org/daylightsaving/e.html">Daylight Saving Time History</a>.
+  </p>
+
+  <h3>Leap Seconds</h3>
+  <p>UTC, or universal coordinated time, throws in a serious complexity. 
+     UTC adds some <i>leap seconds</i> into the mix at various points throughout its calendar.
+     These leap seconds manifest themselves as the 61st second of the minute they occur.
+     Further more UTC leap seconds, the rarer still double leap second, and the yet unused day with one less second,
+     only happen when "they" say so. 
+     So in the sense of the current time, a system must be connected to an outside time source to stay
+     aware of those events. In the sense of historic time, a lookup table is needed. 
+     This is really just another detail of our calendar system, and since the integer time programming
+     style is to internally be calendar agnostic, this is not that big of an issue.
+     More serious is that with UTC the very definition of a day, minute, and hour is different!
+     Since it is very common for applications to use minutes, hours, and days, the most popular strategy
+     is basically to ignore leap seconds. Here are some of the effects ignoring leap seconds in your applications,
+     and caused by work arounds built into operating systems. 
+  </p>
+
+  <ul>
+   <li>Be aware that when rendering a time into the "UTC calendar" the number 61 can be used for 
+       the number of seconds past the minute.</li>
+   <li>The modern unix linear integer time representation has some numbers that represent two 
+       different seconds in the UTC calendar.
+       It is also possible for a number to not represent any second in the UTC calendar.
+       Check platform documentation for details of how to find out which numbers this applies to.
+       The negative effect of using a number line that does not 100% reflect the number of elapsed
+       seconds since its inception, is arguably more than offset by the benefits of not having 
+       consider minutes that are not 60 seconds.</li>
+   <li>The effects of these leap second events are rare enough to be comparable to the artifacts of clock 
+       synchronization</li>
+   <li>Time series data sets utilizing a single integer representation of time intervals should use the
+       <b>first number in the interval</b> for the representation.  For example, 2:00 for the interval 2:00 - 3:00.</li>
+   <li>Presumably, the occasionally available <b>difftime()</b> takes into account leap seconds.</li>
+   <li>For more gory details check out <a href="http://en.wikipedia.org/wiki/Unix_time">this wikipedia page</a>.</li>
+   <li>Another way to look at the situation is to say, even though integer time style programming uses the
+       integer to track the amount of time passed, it really does so only for the purpose of simplifying
+       calendar operations. Therefor, if the overall goal is to make calendar operations easy to perform 
+       for a computer program, it is acceptable for the unix time to differ a few seconds from the real number of seconds
+       since 1970 if it makes the calendar correct. A computer would make a terrible choice for a machine to count
+       the number of real elapsed seconds over a long period of time anyway. </li>
+   <li>When asked "What is time?", Einstein is reported to have said, "time is what the clock on the wall says." </li>
+
+  </ul>
+
+  <h2>Common Implementation Challenges</h2>
+  <p>As great as integer time style programming is, this snazzy approach still hasn't made its way everywhere yet.
+     Other times it can still be unclear how to proceed.
+     There are also plenty of puzzles given to us by our friends in Redmond to solve.
+     Let's review a few I have encountered in recent years.
+  </p>
+
+  <h3>.Net</h3>
+  <p>The .Net runtime internally holds time as the number of milliseconds since 1900 UTC.
+     One would think converting between Unix and .Net time would be a matter of moving between seconds and
+     milliseconds and then applying a 70 year offset. Not so fast, because at least with C#, dotneters don't use this integer
+     for what I'm calling ".Net time". Instead they use <i>objects</i> in the form of the <b>DateTime</b>, and
+     <b>TimeSpan</b> data types. What is needed is a means to convert from a Unix time_t integer to a .Net DateTime
+     object and back. Here is my example of how to get the job done.
+  </p>
+
+<table><caption>Over the river and through the woods, from .Net to Unix time we go...</caption><tr><td bgcolor="wheat"><pre>
+
+ /* convert a unix time_t into a DateTime object in local time */
+ public static DateTime time_convert_local(int unix_time)
+ {
+  DateTime unix_utc, epoch_offset = new System.DateTime(1970, 1, 1, 0, 0, 0);
+
+  unix_utc = epoch_offset.AddSeconds( (double) unix_time);
+  return unix_utc.ToLocalTime();
+ }
+
+ /* convert a unix time_t into a DateTime object in univeral time */
+ public static DateTime time_convert_utc(int unix_time)
+ {
+  DateTime unix_utc, epoch_offset = new System.DateTime(1970, 1, 1, 0, 0, 0);
+
+  unix_utc = epoch_offset.AddSeconds( (double) unix_time);
+  return unix_utc;
+ }
+
+ /* convert a DateTime object in local time to a unix time_t */
+ public static int DateTime_convert_local(DateTime dotnet_time)
+ {
+  DateTime epoch_offset = new System.DateTime(1970, 1, 1, 0, 0, 0);
+  TimeSpan ts = dotnet_time.ToUniversalTime().Subtract(epoch_offset);
+  return (int) ts.TotalSeconds;
+ }
+
+</pre></td></tr></table>
+
+  <h3>MS SQL server</h3>
+  <p>If you ever encounter a MS SQL server, note that it does have a native data type for time called DateTime.
+     Unfortunately it is in no way time zone aware. Thus, if you wanted to store time correctly in a
+     MS SQL server, there are two options. The first is of course to store it as an integer in Unix time. 
+     The second would be to use the DateTime data type, but store all the times in UTC. The challenge arises
+     when an existing database uses DateTime in a local time zone that uses daylight saving time. This situation
+     actually arises in many software applications that do not use integer time style programming. 
+  </p>
+  <p>For starters there will be one hour a year that <i>can not</i> be used at all - the hour before the switch from daylight
+     to standard time. There will also be one hour each year that <i>is not</i> used at all - the hour skipped over during
+     the switch to DST. There is nothing can be done about this. Going from Unix time to the local time is a routine
+     operation. Going from the DateTime fields in the database's locale time to Unix time will also work, provided
+     <b>mktime()</b> is using a locale definition that can figure out witch times during the year are in DST, and ST.
+     The trick is to set the <b>tm_isdst</b> member of the <b>tm structure</b> to -1. 
+     See <u>Converting an arbitrary date in the local time locale to Unix time</u> below.
+  </p>
+
+  <h3>Web Applications</h3>
+  <p>It would certainly be useful if there was a good way to find out the local time zone
+     that a web client is connecting from. This way a page could render its time zones
+     correctly for each visitor. There is a way in javascript to return the time zone offset
+     in minutes. To some extent, this could be resolved to a timezone in a lookup table.
+     I recommend two very important design points for web applications: 
+     <b>always specify the time zone when displaying a time</b>, and <b>give the
+     user a way to change the output to a different time zone</b>. For example,
+     if a corporate intranet application is to be used by personal in three time zones,
+     a drop down box could allow for the selection of any one of those three plus UTC.
+     A conference call at 3:00 PM could be anything, but one at 3:00 PM CST is at 
+     least a real time even you are in MST. A drop down box allowing you to render
+     the time as 2:00 PM MST is even better. Also don't forget to use the daylight
+     saving time version of the time zone name. Because many places do not observe
+     DST, people may mentally convert a time wrong even when they are aware of the
+     differences in zones.
+  </p>
+
+<table><caption>Pulling a Browser's Time Zone</caption><tr><td bgcolor="wheat"><pre>
+&#60script language="JavaScript"&#62
+ var visitortime = new Date();
+ document.write('&#60input type="hidden" name="x-VisitorTimeZoneOffset" ');
+ if(visitortime)
+ {
+  document.write('value="' + visitortime.getTimezoneOffset() + '"&#62');
+ } else {
+  document.write('value="JavaScript not Date() enabled"&#62');
+ }
+&#60/script&#62
+
+&#60noscript&#62
+ &#60input type="hidden" name="x-VisitorTimeZoneOffset" 
+ value="Browser not JavaScript enabled"&#62
+&#60/noscript&#62
+</pre></td></tr></table>
+
+  <br>
+  <hr color="black">
+  <h2 align="center"><a name="cheatsheet">Calander Functions in C cheat sheet</a></h2>
+
+  <h3>Getting the current Unix Time</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=brown>time_t</font> now;
+ now <font color=red>=</font> <b>time</b>(<font color=brown>NULL</font>); /*<font color=royalblue> time(&now) works to </font>*/
+ <b>printf</b>("<font color=teal>current unix time is <b>%d\n</b></font>", now);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+
+  <h3>Getting the current local time as text</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>char</font> time_string<font color=red>[</font>1024<font color=red>]</font>;
+ <b>strftime</b>(time_string, 1024, "<font color=teal><b>%m</b>/<b>%d</b>/<b>%Y %H</b>:<b>%M</b>:<b>%S %Z</b></font>", <b>localtime</b>(<b>time</b>(<font color=brown>NULL</font>))); 
+ <b>printf</b>("<font color=teal><b>%s\n</b></font>", time_string);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Getting the current local time as broken down values</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct tm *</font>time_details <font color=red>=</font> <b>localtime</b>(<b>time</b>(<font color=brown>NULL</font>)); 
+ <b>printf</b>("<font color=teal>for example the day of the month is <b>%d\n</b></font>", time_details<font color=red>-&gt;</font>tm_mday);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Getting the current universal time as broken down values</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct tm *</font>time_details <font color=red>=</font> <b>gmtime</b>(<b>time</b>(<font color=brown>NULL</font>)); 
+ <b>printf</b>("<font color=teal>for example the day of the month in UTC is <b>%d\n</b></font>", time_details<font color=red>-&gt;</font>tm_mday);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Getting the current universal time as text</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>char</font> time_string<font color=red>[</font>1024<font color=red>]</font>;
+ <b>strftime</b>(time_string, 1024, "<font color=teal><b>%m</b>/<b>%d</b>/<b>%Y %H</b>:<b>%M</b>:<b>%S</b> Universal Coordinated Time</font>", <b>gmtime</b>(<b>time</b>(<font color=brown>NULL</font>))); 
+ <b>printf</b>("<font color=teal><b>%s\n</b></font>", time_string);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Converting an arbitrary date in the local time locale to Unix time</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=brown>time_t</font> moment;
+ <font color=blue>struct tm</font> unparsed;
+
+ unparsed<font color=red>.</font>tm_year  <font color=red>=</font> 2006 <font color=red>-</font> 1900; /* <font color=royalblue>the year here is the years past 1900</font> */
+ unparsed<font color=red>.</font>tm_mon   <font color=red>=</font> 12 <font color=red>-</font> 1;      /* <font color=royalblue>month starts a 0</font> */
+ unparsed<font color=red>.</font>tm_mday  <font color=red>=</font> 21;
+ unparsed<font color=red>.</font>tm_hour  <font color=red>=</font> 16;
+ unparsed<font color=red>.</font>tm_min   <font color=red>=</font> 50;
+ unparsed<font color=red>.</font>tm_sec   <font color=red>=</font> 1;
+ unparsed<font color=red>.</font>tm_isdst <font color=red>=</font> -1;          /* <font color=royalblue>set this to -1</font> */
+
+ moment <font color=red>=</font> <b>mktime</b>(<font color=red>&amp;</font>unparsed);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Getting the time zone offset value for the current locale - needs fixing</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <b>tzset</b>();
+ <b>printf</b>("<font color=teal>the current locale time is universal time adjusted by <b>%d</b> seconds<b>\n</b></font>", timezone);
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+
+  <h3>Fining out if the current locale is currently in daylight saving time</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct tm *</font>time_details <font color=red>=</font> <b>localtime</b>(<b>time</b>(<font color=brown>NULL</font>)); 
+ 
+ /* <font color=royalblue>note that localtime() and gmtime() internally call tzset()</font> */
+
+ <font color=red>if</font>(time_details<font color=red>-&gt;</font>tm_isdst)
+  <b>printf</b>("<font color=teal>right now in the current locale it is daylight saving time<b>\n</b></font>");
+ <font color=red>else</font>
+  <b>printf</b>("<font color=teal>right now in the current locale it is not daylight saving time<b>\n</b></font>");
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+
+  <h3>Getting the text for the current locale's current time zone string</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=blue>struct tm *</font>time_details;
+
+ <b>tzset</b>();
+
+ <font color=red>if</font>(daylight)
+ {
+  time_details <font color=red>=</font> <b>localtime</b>(<b>time</b>(<font color=brown>NULL</font>)); 
+ 
+  <b>printf</b>("<font color=teal>right now in the current locale the timezone string is '<b>%s</b>'<b>\n</b></font>",
+         tzname<font color=red>[</font>time_details<font color=red>-&gt;</font>tm_isdst<font color=red>]</font>);
+
+ } <font color=red>else</font> {
+
+  <b>printf</b>("<font color=teal>in the current locale timezone string is allways '<b>%s</b>'<b>\n</b></font>", tzname<font color=red>[</font>0<font color=red>]</font>);
+
+ }
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Converting an arbitrary time in universal time to Unix time</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=red>int</font> difference;
+ <font color=brown>time_t</font> a, b, moment;
+ <font color="blue">struct tm</font> unparsed, <font color="blue">*</font>temp;
+
+ unparsed<font color=red>.</font>tm_year  <font color=red>=</font> 2006 <font color=red>-</font> 1900; /* <font color=royalblue>the year here is the years past 1900</font> */
+ unparsed<font color=red>.</font>tm_mon   <font color=red>=</font> 12 <font color=red>-</font> 1;      /* <font color=royalblue>month starts a 0</font> */
+ unparsed<font color=red>.</font>tm_mday  <font color=red>=</font> 21;
+ unparsed<font color=red>.</font>tm_hour  <font color=red>=</font> 16;
+ unparsed<font color=red>.</font>tm_min   <font color=red>=</font> 50;
+ unparsed<font color=red>.</font>tm_sec   <font color=red>=</font> 1;
+ unparsed<font color=red>.</font>tm_isdst <font color=red>=</font> -1;          /* <font color=royalblue>set this to -1</font> */
+
+ a <font color=red>=</font> <b>mktime</b>(<font color=red>&amp;</font>unparsed);
+ temp <font color=red>=</font> <b>gmtime</b>(<font color=red>&amp;</font>a);
+ b <font color=red>=</font> <b>mktime</b>(temp);
+
+ difference <font color=red>=</font> a <font color=red>-</font> b;
+ moment <font color=red>=</font> a <font color=red>+</font> difference;  /* <font color=royalblue>moment now stores the unix time of unparsed in UTC</font> */
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <h3>Converting an arbitrary time in an arbitrary time zone to Unix time (not portable)</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+<font color="green">#include</font> &lt;stdlib.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=brown>time_t</font> moment;
+ <font color="blue">struct tm</font> unparsed;
+ <font color=red>char</font> old<font color=red>[</font>256<font color=red>]</font>;
+
+ <font color=red>if</font>(<b>getenv</b>("<font color=teal>TZ</font>") <font color=red>==</font> <font color=brown>NULL</font>)
+  old<font color=red>[</font>0<font color=red>]</font> <font color=red>=</font> 0;
+ <font color=red>else</font>
+  <b>snprintf</b>(old, 256, <b>getenv</b>("<font color=teal>TZ</font>"));
+
+ <b>setenv</b>("<font color=teal>TZ</font>", "<font color=teal>UTC</font>", 1); /* <font color=royalblue>set to a value in the tree /usr/share/zoneinfo/ </font>*/
+
+ unparsed<font color=red>.</font>tm_year  <font color=red>=</font> 2006 <font color=red>-</font> 1900; /* <font color=royalblue>the year here is the years past 1900</font> */
+ unparsed<font color=red>.</font>tm_mon   <font color=red>=</font> 12 <font color=red>-</font> 1;      /* <font color=royalblue>month starts a 0</font> */
+ unparsed<font color=red>.</font>tm_mday  <font color=red>=</font> 21;
+ unparsed<font color=red>.</font>tm_hour  <font color=red>=</font> 16;
+ unparsed<font color=red>.</font>tm_min   <font color=red>=</font> 50;
+ unparsed<font color=red>.</font>tm_sec   <font color=red>=</font> 1;
+ unparsed<font color=red>.</font>tm_isdst <font color=red>=</font> -1;          /* <font color=royalblue>set this to -1</font> */
+
+ moment <font color=red>=</font> mktime(<font color=red>&amp;</font>unparsed); 
+
+ <font color=red>if</font>(old<font color=red>[</font>0<font color=red>]</font> <font color=red>==</font> 0)
+   <b>unsetenv</b>("<font color=teal>TZ</font>");
+ <font color=red>else</font>
+   <b>setenv</b>("<font color=teal>TZ</font>", old, 1);
+ 
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+
+  <h3>Rendering a Unix time in an arbitrary time zone (not portable)</h3> 
+<table><tr><td bgcolor="wheat"><pre>
+<font color="green">#include</font> &lt;stdio.h&gt;
+<font color="green">#include</font> &lt;time.h&gt;
+<font color="green">#include</font> &lt;stdlib.h&gt;
+
+<font color=red>int</font> <b>main</b>(<font color=red>void</font>)
+{
+ <font color=brown>time_t</font> moment <font color=red>=</font> 1148248201;
+ <font color=blue>struct tm *</font>time_details;
+ <font color=red>char</font> old<font color=red>[</font>256<font color=red>]</font>;
+
+ <font color=red>if</font>(<b>getenv</b>("<font color=teal>TZ</font>") <font color=red>==</font> <font color=brown>NULL</font>)
+  old<font color=red>[</font>0<font color=red>]</font> <font color=red>=</font> 0;
+ <font color=red>else</font>
+  <b>snprintf</b>(old, 256, <b>getenv</b>("<font color=teal>TZ</font>"));
+
+ <b>setenv</b>("<font color=teal>TZ</font>", "<font color=teal>UTC</font>", 1); /* <font color=royalblue>set to a value in the tree /usr/share/zoneinfo/ </font>*/ 
+
+ time_details <font color=red>=</font> <b>localtime</b>(moment); 
+
+ <font color=red>if</font>(old<font color=red>[</font>0<font color=red>]</font> <font color=red>==</font> 0)
+   <b>unsetenv</b>("<font color=teal>TZ</font>");
+ <font color=red>else</font>
+   <b>setenv</b>("<font color=teal>TZ</font>", old, 1);
+ 
+
+ <font color=red>return</font> 0;
+}
+</pre></td></tr></table>
+
+  <br>
+  <h4>Contributing Credits</h4>
+  <p><b>April 2011</b>. 
+     Pointer syntax error fixed by Jan Theodore Galkowski</p>
+
+  <br>
+  <p align="right">© 2006, 2011 C. Thomas Stover</p>
+
+  <p align="right"><i><b>cts</b> at <b>techdeviancy.com</b></i></p>
+        </p><p><a href="./index.html"">back</a></p>
+
+
+<!-- Begin Footer -->
+          </td>
+         </tr>
+        </table>
+       </td>
+
+      </tr>
+     </table>
+    </td>
+   </tr>
+  </table>
+ </body>
+</html>
